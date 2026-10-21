@@ -1,6 +1,6 @@
 # SHA-256 of each PLAINTEXT file. sealed/<path>.gpg is its encrypted copy.
 # Check: python3 tools/glasgow_seal.py verify
-7f2a3209cb8aef8dcffd3557e84cc806e895028395566247a7278cd7f00ebe33  Forensics_Audit.md
+f79c99ff1510ae45488232e5412f5ea6fb8226bd6e8d0cc6d4284d1aa49e7e1a  Forensics_Audit.md
 6ce44145b1a8eafd2828516025d0402801e417fb4219742f907da9f91d02d2e2  OPEN_ITEMS.csv
 474c86e43bfd509696ad5ac076b0a4e96ce7429b12edf96ffe872b4e9ea793fb  PLAN.md
 aa12d33cfc7050033e87cf88d3ae3f525b415acd6030ca7b96ca61167ada6956  Superseded/Collect-Glasgow_2026-09-30_v1_recovered.ps1
