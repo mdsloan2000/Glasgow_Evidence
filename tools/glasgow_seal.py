@@ -23,7 +23,7 @@ The key is never printed.
 
 Status lines are text, never colour: [OK] [SKIP] [FAIL] [INFO]
 """
-import argparse, hashlib, os, shutil, subprocess, sys, tempfile
+import argparse, hashlib, os, shutil, subprocess, sys, tempfile, time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -93,13 +93,19 @@ def check_key(key):
         sys.exit(1)
 
 
-def cmd_seal(key):
+def cmd_seal(key, budget=0):
     check_key(key)
+    t0 = time.time()
     old = read_sums()
     new, sealed_n, skipped = {}, 0, 0
     changed_evidence = []
     with tempfile.TemporaryDirectory() as home:
+        partial = False
         for rel in plaintext_files():
+            if budget and time.time() - t0 > budget:
+                partial = True
+                if rel in old: new[rel] = old[rel]
+                continue
             h = sha256(REPO / rel)
             if rel.startswith("evidence/") and rel in old and old[rel] != h:
                 say("FAIL", f"EVIDENCE CHANGED, not resealed: {rel}")
@@ -115,16 +121,18 @@ def cmd_seal(key):
                 continue
             target.parent.mkdir(parents=True, exist_ok=True)
             gpg(["--symmetric", "--cipher-algo", "AES256", "--s2k-mode", "3",
-                 "--s2k-digest-algo", "SHA512", "--s2k-count", "65011712",
+                 "--s2k-digest-algo", "SHA512", "--s2k-count", "65536",
                  "--compress-algo", "zlib", "-o", str(target), str(REPO / rel)], key, home)
             sealed_n += 1
             say("OK", f"sealed {rel}")
-    orphans = [p for p in SEALED.rglob("*.gpg")
+    orphans = [] if partial else [p for p in SEALED.rglob("*.gpg")
                if p.relative_to(SEALED).as_posix()[:-4] not in new]
     if changed_evidence:
         say("FAIL", "Evidence files are write-once. SHA256SUMS left unchanged. Stop and tell Mike.")
         sys.exit(2)
     write_sums(new)
+    if partial:
+        say("INFO", f"PARTIAL: time budget reached; {sealed_n} sealed this run. Run seal again to continue.")
     say("INFO", f"{sealed_n} sealed, {skipped} unchanged, {len(new)} tracked")
     for o in orphans:
         say("INFO", f"orphan (plaintext gone or moved): {o.relative_to(REPO).as_posix()}")
@@ -168,7 +176,7 @@ def cmd_unseal(key):
 
 def run(a):
     if a.command == "seal":
-        cmd_seal(a.key)
+        cmd_seal(a.key, a.budget)
     elif a.command == "verify":
         sys.exit(0 if cmd_verify(a.key) else 1)
     else:
@@ -181,6 +189,7 @@ if __name__ == "__main__":
     default_key = Path(os.environ.get("GLASGOW_KEY",
                        Path.home() / "mnt" / "glasgow" / "glasgow-evidence.key"))
     ap.add_argument("--key", type=Path, default=default_key)
+    ap.add_argument("--budget", type=int, default=0, help="seal: stop after N seconds and save progress")
     a = ap.parse_args()
     if shutil.which("gpg") is None:
         say("FAIL", "gpg not found on PATH"); sys.exit(1)
