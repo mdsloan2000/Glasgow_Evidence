@@ -1,0 +1,17 @@
+# FAIL CLOSED. Ignore everything, then allow only what is safe on GitHub.
+# Plaintext evidence and notes stay on JENNY. GitHub gets sealed/*.gpg only.
+# Adding a line below means that file goes to GitHub UNENCRYPTED. Ask Mike first.
+*
+!*/
+!/.gitignore
+!/.gitattributes
+!/README.md
+!/SHA256SUMS
+!/tools/
+!/tools/**
+!/sealed/
+!/sealed/**
+# Never commit these, even inside allowed folders
+*.key
+.~lock.*
+__pycache__/

@@ -1,0 +1,10 @@
+# Never let git rewrite bytes of sealed or binary files.
+*.gpg     binary
+*.evtx    binary
+*.png     binary
+*.jpg     binary
+*.reg     binary
+*.zip     binary
+SHA256SUMS text eol=lf
+*.py      text eol=lf
+*.ps1     text eol=crlf
